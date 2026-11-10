@@ -1,0 +1,13 @@
+import { useEffect, useState } from 'react';
+
+/** Retourne `value` seulement après `delayMs` sans changement (évite une recherche à chaque frappe). */
+export function useDebounce<T>(value: T, delayMs = 300): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(id);
+  }, [value, delayMs]);
+
+  return debounced;
+}
