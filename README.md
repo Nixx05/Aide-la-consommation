@@ -2,8 +2,7 @@
 
 Application mobile (projet tutoré) qui permet de **rechercher des produits alimentaires par leur nom** et, à terme, de les **comparer** selon des critères nutritionnels : Nutri-Score, sucres, matières grasses, additifs, colorants…
 
-> **État actuel (v0.1.0)** : front-end mobile avec recherche de produits sur des **données fictives**.
-> Le branchement à une API (Open Food Facts ou back-end maison) est prévu dans une étape suivante.
+> **État actuel (v0.2.0)** : page d'accueil, recherche branchée sur l'API **Open Food Facts**, filtres Nutri-Score et allergènes.
 
 ## Fonctionnalités
 
@@ -11,9 +10,10 @@ Application mobile (projet tutoré) qui permet de **rechercher des produits alim
 | --- | --- |
 | Recherche de produit par nom / marque / code-barres | ✅ v0.1.0 |
 | Fiche produit (Nutri-Score, NOVA, valeurs pour 100 g, additifs) | ✅ v0.1.0 |
-| Filtres (Nutri-Score, sans colorants, sucres max…) | 🔜 `feature/filtres` |
+| Page d'accueil | ✅ v0.2.0 |
+| Filtres Nutri-Score minimum et « sans allergène » | ✅ v0.2.0 |
 | Comparaison de produits | 🔜 `feature/comparaison` |
-| Connexion à l'API Open Food Facts / back-end | 🔜 `feature/integration-api` |
+| Connexion à l'API Open Food Facts | ✅ v0.2.0 |
 | Scan de code-barres | 💡 idée |
 
 ## Stack technique
@@ -22,6 +22,10 @@ Application mobile (projet tutoré) qui permet de **rechercher des produits alim
 - Données : couche `services/` interchangeable (mock aujourd'hui, API demain)
 
 ## Démarrer
+
+Le plus simple sous Windows : double-cliquer sur **`LANCER_WEB.bat`** (navigateur) ou **`LANCER_TELEPHONE.bat`** (QR code pour Expo Go).
+
+À la main :
 
 Prérequis : Node.js ≥ 20 et l'application **Expo Go** sur votre téléphone.
 
