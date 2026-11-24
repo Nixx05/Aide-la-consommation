@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, levelColors, radius, spacing } from '../theme';
+import { colors, levelColors, radius, shadow, spacing } from '../theme';
 import type { Nutrients, Product } from '../types/product';
 import { nutrientLevel } from '../utils/nutrition';
 import { formatNutrient } from '../utils/text';
@@ -38,7 +38,7 @@ export function ProductCard({ product, onPress }: Props) {
           {product.name}
         </Text>
         <Text style={styles.brand} numberOfLines={1}>
-          {product.brand} · {product.quantity}
+          {[product.brand, product.quantity].filter(Boolean).join(' · ')}
         </Text>
 
         <View style={styles.scores}>
@@ -73,8 +73,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    ...shadow,
   },
   pressed: { opacity: 0.7 },
   body: { flex: 1, gap: 4 },

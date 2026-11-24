@@ -3,6 +3,7 @@ import type { Level } from '../utils/nutrition';
 
 export const colors = {
   primary: '#1F8A4C',
+  primaryDark: '#14633A',
   primaryLight: '#E7F5EC',
   background: '#F6F7F5',
   surface: '#FFFFFF',
@@ -37,3 +38,15 @@ export const levelColors: Record<Level, string> = {
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };
 export const radius = { sm: 6, md: 12, lg: 20 };
+
+/** Largeur max du contenu (sinon sur ordinateur tout est étiré sur la largeur de l'écran). */
+export const MAX_WIDTH = 760;
+
+/** Ombre légère pour les cartes. */
+export const shadow = {
+  shadowColor: '#1B1F1C',
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+};

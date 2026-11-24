@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, levelColors, radius, spacing } from '../theme';
+import { colors, levelColors, MAX_WIDTH, radius, spacing } from '../theme';
 import type { Nutrients, Product } from '../types/product';
 import { LEVEL_LABEL, nutrientLevel } from '../utils/nutrition';
 import { formatNutrient } from '../utils/text';
@@ -60,7 +60,7 @@ export function ProductDetailModal({ product, onClose }: Props) {
               <View style={styles.heroText}>
                 <Text style={styles.name}>{product.name}</Text>
                 <Text style={styles.brand}>
-                  {product.brand} · {product.quantity}
+                  {[product.brand, product.quantity].filter(Boolean).join(' · ')}
                 </Text>
                 <Text style={styles.category}>{product.category}</Text>
               </View>
@@ -102,7 +102,8 @@ export function ProductDetailModal({ product, onClose }: Props) {
                 product.additives.map((a) => (
                   <View key={a.code} style={styles.additiveRow}>
                     <Text style={styles.additiveCode}>{a.code}</Text>
-                    <Text style={styles.additiveName}>{a.name}</Text>
+                    {/* L'API ne donne que le code : on n'affiche le nom que s'il est connu */}
+                    <Text style={styles.additiveName}>{a.name !== a.code ? a.name : ''}</Text>
                     {a.isColorant && (
                       <View style={styles.colorantTag}>
                         <Text style={styles.colorantText}>Colorant</Text>
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   close: { color: colors.primary, fontSize: 16, fontWeight: '600' },
-  content: { padding: spacing.lg, paddingTop: 0, gap: spacing.lg },
+  content: { padding: spacing.lg, paddingTop: 0, gap: spacing.lg, width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
   hero: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center' },
   heroText: { flex: 1, gap: 4 },
   name: { fontSize: 20, fontWeight: '800', color: colors.text },
