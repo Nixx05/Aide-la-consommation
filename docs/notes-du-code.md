@@ -1,7 +1,16 @@
 # Notes du code — NutriChoix
 
-L'organisation reprend celle du projet web de nos collègues (voir le tableau de
-correspondance dans [architecture.md](architecture.md)).
+L'organisation reprend celle du projet web de nos collègues (`ProjetWeb-main`, Spring Boot) :
+
+| Projet web (Java / Spring Boot) | Notre projet (TypeScript / React Native) | Rôle |
+| --- | --- | --- |
+| `com/Product.java` | `src/model/Product.ts` | Le modèle : à quoi ressemble un produit |
+| `DemoApplication.java` | `src/controller/ProductController.ts` | Appel à l'API Open Food Facts + filtres |
+| `templates/homePage.html` | `src/screens/HomeScreen.tsx` | Page d'accueil |
+| `templates/search.html` | `src/screens/SearchScreen.tsx` | Page de recherche |
+| `static/css/style.css` | `src/style/theme.ts` | Couleurs et mise en forme |
+| routes `"/"` et `"/recherche"` | `App.tsx` | Choix de la page affichée |
+| — | `src/components/` | Morceaux d'interface réutilisés dans les pages |
 
 Ce document explique chaque partie du code, dans l'ordre où il est conseillé de les lire.
 Tout le code de l'application est dans le dossier `mobile/`.

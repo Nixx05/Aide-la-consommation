@@ -57,4 +57,4 @@ npm run typecheck  # vérification TypeScript
 ## Travailler en équipe
 
 Voir **[CONTRIBUTING.md](CONTRIBUTING.md)** : branches, conventions de commit, pull requests.
-L'architecture est décrite dans **[docs/architecture.md](docs/architecture.md)**, chaque fichier est expliqué dans **[docs/notes-du-code.md](docs/notes-du-code.md)**, et la répartition des tâches dans **[docs/organisation.md](docs/organisation.md)**.
+Chaque fichier est expliqué dans **[docs/notes-du-code.md](docs/notes-du-code.md)**, et la répartition des tâches dans **[docs/organisation.md](docs/organisation.md)**.
