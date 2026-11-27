@@ -19,7 +19,8 @@ Application mobile (projet tutoré) qui permet de **rechercher des produits alim
 ## Stack technique
 
 - [Expo](https://expo.dev) + React Native + TypeScript
-- Données : couche `services/` interchangeable (mock aujourd'hui, API demain)
+- react-native-web pour la version navigateur
+- Données : API Open Food Facts (pas de back-end à nous)
 
 ## Démarrer
 
@@ -44,14 +45,11 @@ npm run typecheck  # vérification TypeScript
 ├── mobile/                 # Application mobile Expo
 │   ├── App.tsx             # Point d'entrée
 │   └── src/
-│       ├── components/     # Composants UI réutilisables
-│       ├── screens/        # Écrans
-│       ├── hooks/          # Logique réutilisable (recherche, debounce…)
-│       ├── services/       # Accès aux données (mock ↔ API)
-│       ├── data/           # Données fictives
-│       ├── types/          # Types TypeScript (modèle Produit)
-│       ├── theme/          # Couleurs, espacements
-│       └── utils/          # Fonctions utilitaires
+│       ├── model/          # Product.ts : le modèle produit
+│       ├── controller/     # ProductController.ts : appel à l'API + filtres
+│       ├── screens/        # Les pages (accueil, recherche)
+│       ├── components/     # Morceaux d'interface réutilisables
+│       └── style/          # Couleurs et formatage
 ├── docs/                   # Documentation du projet
 └── .github/                # CI, modèles d'issues et de pull requests
 ```
@@ -59,4 +57,4 @@ npm run typecheck  # vérification TypeScript
 ## Travailler en équipe
 
 Voir **[CONTRIBUTING.md](CONTRIBUTING.md)** : branches, conventions de commit, pull requests.
-L'architecture est décrite dans **[docs/architecture.md](docs/architecture.md)** et la répartition des tâches dans **[docs/organisation.md](docs/organisation.md)**.
+L'architecture est décrite dans **[docs/architecture.md](docs/architecture.md)**, chaque fichier est expliqué dans **[docs/notes-du-code.md](docs/notes-du-code.md)**, et la répartition des tâches dans **[docs/organisation.md](docs/organisation.md)**.

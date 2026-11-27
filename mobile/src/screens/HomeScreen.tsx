@@ -1,161 +1,104 @@
+// Page d'accueil (équivalent de homePage.html) : présentation de l'application + recherche rapide.
+
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { NovaBadge, NutriScoreBadge } from '../components/Badges';
 import { Logo } from '../components/Logo';
-import { NovaBadge } from '../components/NovaBadge';
-import { NutriScoreBadge } from '../components/NutriScoreBadge';
 import { SearchBar } from '../components/SearchBar';
-import { colors, MAX_WIDTH, radius, shadow, spacing } from '../theme';
-import type { NovaGroup, NutriScore } from '../types/product';
+import { colors, shadow } from '../style/theme';
 
 const SUGGESTIONS = ['Yaourt nature', 'Céréales', 'Biscuits', 'Cola', 'Pâte à tartiner'];
 
-// Exemple affiché dans la carte de droite (ce ne sont pas de vrais produits)
-const EXAMPLE: { name: string; detail: string; score: NutriScore; nova: NovaGroup }[] = [
-  { name: 'Yaourt nature', detail: 'Sucres 4,5 g · sans additif', score: 'a', nova: 1 },
-  { name: 'Céréales au chocolat', detail: 'Sucres 28 g · 2 additifs', score: 'd', nova: 4 },
-  { name: 'Soda', detail: 'Sucres 10,6 g · 1 colorant', score: 'e', nova: 4 },
-];
-
-const STEPS = [
-  { title: 'Cherchez', text: "Tapez un nom de produit, une marque ou son code-barres." },
-  { title: 'Comparez', text: 'Nutri-Score, transformation, sucres, gras, additifs : tout est sur la même carte.' },
-  { title: 'Choisissez', text: 'Filtrez les meilleurs produits ou ceux sans vos allergènes, et faites votre choix.' },
-];
-
 type Props = {
-  /** Ouvre l'écran de recherche, avec une recherche déjà lancée si `query` est renseigné. */
-  onSearch: (query: string) => void;
+  goToSearch: (text: string) => void;
 };
 
-export function HomeScreen({ onSearch }: Props) {
+export function HomeScreen({ goToSearch }: Props) {
   const [text, setText] = useState('');
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView keyboardShouldPersistTaps="handled">
+      <ScrollView>
         {/* Barre du haut */}
         <View style={styles.nav}>
-          <View style={[styles.inner, styles.navRow]}>
+          <View style={[styles.center, styles.navRow]}>
             <Logo size={30} />
-            <Pressable onPress={() => onSearch('')} style={styles.navButton} accessibilityRole="button">
+            <Pressable onPress={() => goToSearch('')} style={styles.navButton}>
               <Text style={styles.navButtonText}>Rechercher</Text>
             </Pressable>
           </View>
         </View>
 
-        {/* Bloc principal */}
+        {/* Bloc principal : titre, recherche et exemple */}
         <View style={styles.hero}>
-          <View style={[styles.inner, styles.heroRow]}>
+          <View style={[styles.center, styles.heroRow]}>
             <View style={styles.heroLeft}>
               <Text style={styles.badge}>Gratuit · données Open Food Facts</Text>
               <Text style={styles.heroTitle}>
-                Mangez <Text style={styles.highlight}>mieux</Text>,{'\n'}sans vous prendre la tête.
+                Mangez <Text style={{ color: colors.primary }}>mieux</Text>,{'\n'}sans vous prendre la tête.
               </Text>
               <Text style={styles.heroText}>
                 NutriChoix vous dit en un coup d'œil si un produit du supermarché est bon pour vous,
                 et vous aide à trouver une meilleure alternative.
               </Text>
-              <SearchBar value={text} onChangeText={setText} onSubmit={() => onSearch(text.trim())} />
+              <SearchBar value={text} onChange={setText} onSearch={() => goToSearch(text)} />
               <View style={styles.suggestions}>
                 {SUGGESTIONS.map((s) => (
-                  <Pressable key={s} style={styles.suggestion} onPress={() => onSearch(s)} accessibilityRole="button">
+                  <Pressable key={s} style={styles.suggestion} onPress={() => goToSearch(s)}>
                     <Text style={styles.suggestionText}>{s}</Text>
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            <View style={styles.exampleCard}>
-              <Text style={styles.exampleTitle}>Exemple de comparaison</Text>
-              {EXAMPLE.map((item) => (
-                <View key={item.name} style={styles.exampleRow}>
-                  <View style={styles.exampleText}>
-                    <Text style={styles.exampleName}>{item.name}</Text>
-                    <Text style={styles.exampleDetail}>{item.detail}</Text>
-                  </View>
-                  <View style={styles.exampleBadges}>
-                    <NutriScoreBadge score={item.score} />
-                    <NovaBadge nova={item.nova} />
-                  </View>
-                </View>
-              ))}
+            {/* Exemple (pas de vrais produits) */}
+            <View style={styles.example}>
+              <Text style={styles.exampleTitle}>EXEMPLE DE COMPARAISON</Text>
+              <ExampleRow name="Yaourt nature" detail="Sucres 4,5 g · sans additif" score="a" nova={1} />
+              <ExampleRow name="Céréales au chocolat" detail="Sucres 28 g · 2 additifs" score="d" nova={4} />
+              <ExampleRow name="Soda" detail="Sucres 10,6 g · 1 colorant" score="e" nova={4} />
             </View>
           </View>
         </View>
 
         {/* Comment ça marche */}
-        <View style={styles.section}>
-          <View style={styles.inner}>
-            <Text style={styles.sectionTitle}>Comment ça marche ?</Text>
-            <View style={styles.grid}>
-              {STEPS.map((step, i) => (
-                <View key={step.title} style={styles.step}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>{i + 1}</Text>
-                  </View>
-                  <Text style={styles.cardTitle}>{step.title}</Text>
-                  <Text style={styles.cardText}>{step.text}</Text>
-                </View>
-              ))}
-            </View>
+        <View style={styles.center}>
+          <Text style={styles.sectionTitle}>Comment ça marche ?</Text>
+          <View style={styles.grid}>
+            <Card title="1. Cherchez" text="Tapez un nom de produit, une marque ou son code-barres." />
+            <Card title="2. Comparez" text="Nutri-Score, transformation, sucres, gras, additifs : tout est sur la même carte." />
+            <Card title="3. Choisissez" text="Filtrez les meilleurs produits ou ceux sans vos allergènes." />
+          </View>
+
+          {/* Ce qu'on affiche */}
+          <Text style={styles.sectionTitle}>Ce que vous trouverez sur chaque produit</Text>
+          <View style={styles.grid}>
+            <Card title="Nutri-Score" text="La note de A à E sur la qualité nutritionnelle.">
+              <NutriScoreBadge score="b" />
+            </Card>
+            <Card title="Transformation" text="Le groupe NOVA : de 1 (brut) à 4 (ultra-transformé).">
+              <NovaBadge nova={4} />
+            </Card>
+            <Card title="Additifs et allergènes" text="Les additifs (colorants en rouge) et les 14 allergènes.">
+              <Text style={styles.redTag}>E150d</Text>
+            </Card>
+          </View>
+
+          {/* Bandeau final */}
+          <View style={styles.cta}>
+            <Text style={styles.ctaTitle}>Prêt à remplir un panier plus sain ?</Text>
+            <Pressable onPress={() => goToSearch('')} style={styles.ctaButton}>
+              <Text style={styles.ctaButtonText}>Commencer une recherche</Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* Ce qu'on affiche */}
-        <View style={styles.section}>
-          <View style={styles.inner}>
-            <Text style={styles.sectionTitle}>Ce que vous trouverez sur chaque produit</Text>
-            <View style={styles.grid}>
-              <View style={styles.card}>
-                <NutriScoreBadge score="b" />
-                <Text style={styles.cardTitle}>Nutri-Score</Text>
-                <Text style={styles.cardText}>
-                  La note de A à E sur la qualité nutritionnelle. Filtrez pour ne garder que les meilleurs.
-                </Text>
-              </View>
-              <View style={styles.card}>
-                <NovaBadge nova={4} />
-                <Text style={styles.cardTitle}>Transformation</Text>
-                <Text style={styles.cardText}>
-                  Le groupe NOVA indique si un aliment est brut (1) ou ultra-transformé (4).
-                </Text>
-              </View>
-              <View style={styles.card}>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText}>E150d</Text>
-                </View>
-                <Text style={styles.cardTitle}>Additifs et allergènes</Text>
-                <Text style={styles.cardText}>
-                  Les additifs (colorants mis en avant) et les 14 allergènes, avec un filtre « sans allergène ».
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Appel à l'action */}
-        <View style={styles.section}>
-          <View style={styles.inner}>
-            <View style={styles.cta}>
-              <Text style={styles.ctaTitle}>Prêt à remplir un panier plus sain ?</Text>
-              <Pressable
-                onPress={() => onSearch('')}
-                style={({ pressed }) => [styles.ctaButton, pressed && { opacity: 0.85 }]}
-                accessibilityRole="button"
-              >
-                <Text style={styles.ctaButtonText}>Commencer une recherche</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
+        {/* Pied de page */}
         <View style={styles.footer}>
-          <View style={[styles.inner, styles.footerRow]}>
+          <View style={[styles.center, styles.footerRow]}>
             <Logo size={20} />
-            <Text style={styles.footerText}>
-              Projet tutoré · Données Open Food Facts, base alimentaire collaborative et libre
-            </Text>
+            <Text style={styles.footerText}>Projet tutoré · Données Open Food Facts, base alimentaire libre</Text>
           </View>
         </View>
       </ScrollView>
@@ -163,94 +106,80 @@ export function HomeScreen({ onSearch }: Props) {
   );
 }
 
+// Une ligne de l'exemple de comparaison
+function ExampleRow({ name, detail, score, nova }: { name: string; detail: string; score: 'a' | 'd' | 'e'; nova: 1 | 4 }) {
+  return (
+    <View style={styles.exampleRow}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.exampleName}>{name}</Text>
+        <Text style={styles.muted}>{detail}</Text>
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 6 }}>
+        <NutriScoreBadge score={score} />
+        <NovaBadge nova={nova} />
+      </View>
+    </View>
+  );
+}
+
+// Une carte blanche avec un titre et un texte (et un badge au-dessus si on en donne un)
+function Card({ title, text, children }: { title: string; text: string; children?: React.ReactNode }) {
+  return (
+    <View style={styles.card}>
+      {children}
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.muted}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  inner: { width: '100%', maxWidth: 1040, alignSelf: 'center', paddingHorizontal: spacing.lg },
+  center: { width: '100%', maxWidth: 1040, alignSelf: 'center', paddingHorizontal: 16 },
 
-  nav: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: spacing.md },
+  nav: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 12 },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  navButton: { borderWidth: 1, borderColor: colors.primary, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 6 },
+  navButton: { borderWidth: 1, borderColor: colors.primary, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   navButtonText: { color: colors.primary, fontWeight: '700' },
 
   hero: { backgroundColor: colors.primaryLight, paddingVertical: 40 },
   heroRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 32, alignItems: 'center' },
-  heroLeft: { flexGrow: 1, flexBasis: 320, maxWidth: MAX_WIDTH, gap: spacing.md },
+  heroLeft: { flexGrow: 1, flexBasis: 320, maxWidth: 760, gap: 12 },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     color: colors.primary,
     fontWeight: '700',
     fontSize: 12,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
+    borderRadius: 20,
+    paddingHorizontal: 12,
     paddingVertical: 4,
     overflow: 'hidden',
   },
-  heroTitle: { fontSize: 38, lineHeight: 44, fontWeight: '800', color: colors.text, letterSpacing: -1 },
-  highlight: { color: colors.primary },
-  heroText: { fontSize: 16, lineHeight: 24, color: colors.textMuted, marginBottom: spacing.xs },
-  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  suggestion: { backgroundColor: colors.surface, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: 5 },
+  heroTitle: { fontSize: 38, lineHeight: 44, fontWeight: '800', color: colors.text },
+  heroText: { fontSize: 16, lineHeight: 24, color: colors.textMuted },
+  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  suggestion: { backgroundColor: colors.white, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   suggestionText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
 
-  exampleCard: {
-    flexGrow: 1,
-    flexBasis: 280,
-    maxWidth: 420,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-    ...shadow,
-  },
-  exampleTitle: { fontSize: 13, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  exampleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  exampleText: { flex: 1, gap: 2 },
+  example: { flexGrow: 1, flexBasis: 280, maxWidth: 420, backgroundColor: colors.white, borderRadius: 20, padding: 16, gap: 12, ...shadow },
+  exampleTitle: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+  exampleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
   exampleName: { fontSize: 15, fontWeight: '700', color: colors.text },
-  exampleDetail: { fontSize: 12, color: colors.textMuted },
-  exampleBadges: { alignItems: 'flex-end', gap: 6 },
 
-  section: { paddingTop: 40 },
-  sectionTitle: { fontSize: 22, fontWeight: '800', color: colors.text, marginBottom: spacing.lg, letterSpacing: -0.5 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  step: { flexGrow: 1, flexBasis: 220, gap: spacing.sm, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface, ...shadow },
-  stepNumber: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  stepNumberText: { color: '#fff', fontWeight: '800' },
-  card: {
-    flexGrow: 1,
-    flexBasis: 220,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    gap: spacing.sm,
-    alignItems: 'flex-start',
-    ...shadow,
-  },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginTop: spacing.xs },
-  cardText: { fontSize: 14, lineHeight: 20, color: colors.textMuted },
-  tag: { backgroundColor: '#FDECEA', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText: { color: colors.danger, fontSize: 12, fontWeight: '700' },
+  sectionTitle: { fontSize: 22, fontWeight: '800', color: colors.text, marginTop: 40, marginBottom: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  card: { flexGrow: 1, flexBasis: 220, backgroundColor: colors.white, borderRadius: 12, padding: 16, gap: 8, alignItems: 'flex-start', ...shadow },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  muted: { fontSize: 13, lineHeight: 19, color: colors.textMuted },
+  redTag: { backgroundColor: colors.redLight, color: colors.red, fontSize: 12, fontWeight: '700', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
 
-  cta: {
-    backgroundColor: colors.primaryDark,
-    borderRadius: radius.lg,
-    paddingVertical: 32,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.lg,
-  },
+  cta: { backgroundColor: colors.primaryDark, borderRadius: 20, padding: 32, alignItems: 'center', gap: 16, marginTop: 40 },
   ctaTitle: { color: '#fff', fontSize: 22, fontWeight: '800', textAlign: 'center' },
-  ctaButton: { backgroundColor: '#fff', borderRadius: radius.md, paddingHorizontal: spacing.xl, paddingVertical: 12 },
+  ctaButton: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 24, paddingVertical: 12 },
   ctaButtonText: { color: colors.primaryDark, fontWeight: '800', fontSize: 16 },
 
-  footer: { marginTop: 40, paddingVertical: spacing.xl, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.surface },
-  footerRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  footer: { marginTop: 40, paddingVertical: 24, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.white },
+  footerRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   footerText: { fontSize: 12, color: colors.textMuted },
 });

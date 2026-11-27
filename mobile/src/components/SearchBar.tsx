@@ -1,50 +1,38 @@
+// Barre de recherche : champ de texte + bouton "Rechercher".
+// Utilisée sur la page d'accueil et sur la page de recherche.
+
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors } from '../style/theme';
 
 type Props = {
   value: string;
-  onChangeText: (text: string) => void;
-  onSubmit: () => void;
-  autoFocus?: boolean;
+  onChange: (text: string) => void;
+  onSearch: () => void;
 };
 
-export function SearchBar({ value, onChangeText, onSubmit, autoFocus }: Props) {
+export function SearchBar({ value, onChange, onSearch }: Props) {
   return (
     <View style={styles.row}>
-      <View style={styles.container}>
-        <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
-          ⌕
-        </Text>
+      <View style={styles.field}>
+        <Text style={styles.icon}>⌕</Text>
         <TextInput
           style={styles.input}
           value={value}
-          onChangeText={onChangeText}
-          onSubmitEditing={onSubmit}
+          onChangeText={onChange}
+          onSubmitEditing={onSearch} // touche Entrée
           placeholder="Nutella, yaourt nature, 3017620422003…"
           placeholderTextColor={colors.textMuted}
           returnKeyType="search"
           autoCorrect={false}
-          autoCapitalize="none"
-          autoFocus={autoFocus}
-          accessibilityLabel="Rechercher un produit"
         />
-        {value.length > 0 && (
-          <Pressable
-            onPress={() => onChangeText('')}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Effacer la recherche"
-            style={styles.clear}
-          >
+        {value !== '' && (
+          <Pressable onPress={() => onChange('')} style={styles.clear}>
             <Text style={styles.clearText}>✕</Text>
           </Pressable>
         )}
       </View>
-      <Pressable
-        onPress={onSubmit}
-        style={({ pressed }) => [styles.button, pressed && { backgroundColor: colors.primaryDark }]}
-        accessibilityRole="button"
-      >
+
+      <Pressable onPress={onSearch} style={({ pressed }) => [styles.button, pressed && { backgroundColor: colors.primaryDark }]}>
         <Text style={styles.buttonText}>Rechercher</Text>
       </Pressable>
     </View>
@@ -52,35 +40,22 @@ export function SearchBar({ value, onChangeText, onSubmit, autoFocus }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: spacing.sm },
-  container: {
+  row: { flexDirection: 'row', gap: 8 },
+  field: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    backgroundColor: colors.white,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 12,
     height: 48,
   },
-  icon: { fontSize: 22, color: colors.textMuted, marginRight: spacing.sm },
+  icon: { fontSize: 22, color: colors.textMuted, marginRight: 8 },
   input: { flex: 1, fontSize: 16, color: colors.text, height: '100%', minWidth: 0 },
-  clear: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  clear: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   clearText: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
-    height: 48,
-  },
+  button: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', height: 48 },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

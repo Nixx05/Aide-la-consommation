@@ -1,43 +1,24 @@
+// Logo NutriChoix : une feuille dans un carré vert + le nom.
+// La feuille est un carré avec deux coins arrondis, tourné de 45°.
+
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { colors } from '../style/theme';
 
-type Props = {
-  size?: number;
-  /** Texte en blanc, pour un fond vert */
-  light?: boolean;
-};
+export function Logo({ size = 32 }: { size?: number }) {
+  const leaf = size / 2;
 
-/**
- * Logo NutriChoix : une feuille dans un carré vert + le nom.
- * La feuille est un simple carré avec deux coins arrondis, tourné de 45°.
- */
-export function Logo({ size = 32, light = false }: Props) {
-  const leaf = size * 0.5;
   return (
-    <View style={styles.row} accessibilityRole="header" accessibilityLabel="NutriChoix">
-      <View
-        style={[
-          styles.mark,
-          { width: size, height: size, borderRadius: size * 0.3 },
-          light && { backgroundColor: '#fff' },
-        ]}
-      >
+    <View style={styles.row}>
+      <View style={[styles.square, { width: size, height: size, borderRadius: size * 0.3 }]}>
         <View
           style={[
             styles.leaf,
-            {
-              width: leaf,
-              height: leaf,
-              borderTopLeftRadius: leaf,
-              borderBottomRightRadius: leaf,
-              backgroundColor: light ? colors.primary : '#fff',
-            },
+            { width: leaf, height: leaf, borderTopLeftRadius: leaf, borderBottomRightRadius: leaf },
           ]}
         />
       </View>
       <Text style={[styles.name, { fontSize: size * 0.7 }]}>
-        <Text style={{ color: light ? '#fff' : colors.text }}>Nutri</Text>
-        <Text style={{ color: light ? colors.primaryLight : colors.primary }}>Choix</Text>
+        Nutri<Text style={{ color: colors.primary }}>Choix</Text>
       </Text>
     </View>
   );
@@ -45,7 +26,7 @@ export function Logo({ size = 32, light = false }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mark: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  leaf: { transform: [{ rotate: '45deg' }] },
-  name: { fontWeight: '800', letterSpacing: -0.5 },
+  square: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  leaf: { backgroundColor: '#fff', transform: [{ rotate: '45deg' }] },
+  name: { fontWeight: '800', color: colors.text },
 });

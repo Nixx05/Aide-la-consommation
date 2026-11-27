@@ -1,56 +1,45 @@
 # Architecture
 
+L'organisation reprend celle du projet web de nos collègues (`ProjetWeb-main`, Spring Boot),
+adaptée à une application Expo / React Native.
+
+## Correspondance avec le projet web
+
+| Projet web (Java / Spring Boot) | Notre projet (TypeScript / React Native) | Rôle |
+| --- | --- | --- |
+| `com/Product.java` | `src/model/Product.ts` | Le modèle : à quoi ressemble un produit |
+| `DemoApplication.java` | `src/controller/ProductController.ts` | Appel à l'API Open Food Facts + filtres |
+| `templates/homePage.html` | `src/screens/HomeScreen.tsx` | Page d'accueil |
+| `templates/search.html` | `src/screens/SearchScreen.tsx` | Page de recherche |
+| `static/css/style.css` | `src/style/theme.ts` + les `StyleSheet` de chaque fichier | Couleurs et mise en forme |
+| routes `@GetMapping("/")`, `("/recherche")` | `App.tsx` | Choix de la page affichée |
+| — | `src/components/` | Morceaux d'interface réutilisés dans les pages |
+
 ## Vue d'ensemble
 
 ```
-┌──────────────────────────── mobile/ (Expo) ────────────────────────────┐
-│                                                                         │
-│  screens/  ──utilise──▶  hooks/  ──appelle──▶  services/productService  │
-│     │                                             │                     │
-│     ▼                                             ├─ apiProductRepository   (par défaut)
-│  components/                                      └─ mockProductRepository  (hors ligne)
-│                                                         │
-└─────────────────────────────────────────────────────────┼───────────────┘
-                                                          ▼
-                                            API Open Food Facts / back-end
+App.tsx  (choisit la page : accueil ou recherche)
+   │
+   ├── screens/HomeScreen.tsx     page d'accueil
+   └── screens/SearchScreen.tsx   page de recherche
+            │
+            ├── components/                    morceaux d'interface
+            └── controller/ProductController.ts ── internet ──▶ API Open Food Facts
+                        │
+                        └── model/Product.ts   (type des produits)
 ```
 
-## Principe clé : la couche `services`
+Il n'y a pas de back-end ni de base de données à nous : l'application appelle
+directement l'API publique Open Food Facts (même API que le projet web).
 
-Les écrans ne savent pas d'où viennent les données. Ils utilisent l'interface
-`ProductRepository` définie dans `src/services/ProductRepository.ts` :
+## Chemin d'une recherche
 
-```ts
-interface ProductRepository {
-  search(query: string): Promise<Product[]>;
-  getByCode(code: string): Promise<Product | null>;
-}
-```
+1. L'utilisateur tape un texte et appuie sur **Rechercher** (`SearchBar`).
+2. `SearchScreen` appelle `searchProducts(texte)` du contrôleur.
+3. Le contrôleur envoie la requête `cgi/search.pl` à Open Food Facts (même URL que le projet web).
+   Si elle échoue (erreur 503 fréquente), il réessaie avec `search.openfoodfacts.org`.
+4. Chaque produit reçu est transformé en `Product` par `createProduct`.
+5. `SearchScreen` garde la liste, applique les filtres (`isValidNutriScore`, `isAllergenFree`)
+   et affiche une `ProductCard` par produit. Un clic ouvre `ProductDetail`.
 
-- `apiProductRepository` (par défaut) appelle l'API Open Food Facts, comme le projet web
-  de référence : `cgi/search.pl` pour la recherche, puis conversion de chaque produit
-  vers notre type `Product` (fonction `toProduct`). Si cette recherche renvoie une erreur
-  (souvent 503 quand le serveur est chargé), on passe par `search.openfoodfacts.org`.
-- `mockProductRepository` lit `src/data/mockProducts.ts` ; il s'active avec
-  `EXPO_PUBLIC_USE_MOCK=true` dans `mobile/.env.local`, pour travailler sans internet.
-
-Les filtres (Nutri-Score minimum, sans allergène) sont dans `src/utils/filters.ts`
-(`isValidNutriScore`, `isAllergenFree`) et s'appliquent sur les résultats déjà reçus.
-
-Navigation : `App.tsx` garde l'écran affiché dans un état (`home` ou `search`).
-
-## Modèle de données
-
-Le type `Product` (`src/types/product.ts`) est le contrat entre le front-end et l'API.
-Il reprend les champs utiles d'Open Food Facts : Nutri-Score, groupe NOVA, valeurs
-nutritionnelles pour 100 g, additifs (dont colorants E100–E199), allergènes, labels.
-
-Toute modification de ce type doit être discutée en équipe (elle impacte tout le monde).
-
-## Brancher l'API (pour l'équipe `feature/integration-api`)
-
-1. Créer `src/services/apiProductRepository.ts` qui implémente `ProductRepository`.
-2. Convertir la réponse de l'API vers le type `Product`.
-3. Dans `src/services/index.ts`, remplacer `mockProductRepository` par `apiProductRepository`
-   (ou lire `EXPO_PUBLIC_USE_MOCK` pour basculer).
-4. Mettre l'URL de l'API dans `EXPO_PUBLIC_API_URL` (fichier `.env.local`, non versionné).
+Le détail de chaque fichier est dans [notes-du-code.md](notes-du-code.md).

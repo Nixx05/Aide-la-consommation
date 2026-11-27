@@ -1,59 +1,79 @@
-import { useState } from 'react';
+// Page de recherche (équivalent de search.html) : barre de recherche, filtres, résultats et fiche produit.
+
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState } from '../components/EmptyState';
+import { isAllergenFree, isValidNutriScore, searchProducts } from '../controller/ProductController';
 import { FilterPanel } from '../components/FilterPanel';
 import { Logo } from '../components/Logo';
+import { Message } from '../components/Message';
 import { ProductCard } from '../components/ProductCard';
-import { ProductDetailModal } from '../components/ProductDetailModal';
+import { ProductDetail } from '../components/ProductDetail';
 import { SearchBar } from '../components/SearchBar';
-import { MIN_QUERY_LENGTH, useProductSearch } from '../hooks/useProductSearch';
-import { colors, MAX_WIDTH, radius, spacing } from '../theme';
-import type { Product } from '../types/product';
-import { applyFilters, NO_FILTERS, type Filters } from '../utils/filters';
+import { colors, MAX_WIDTH } from '../style/theme';
+import { NutriScore, Product } from '../model/Product';
 
 const SUGGESTIONS = ['Yaourt nature', 'Céréales', 'Biscuits', 'Cola', 'Pâte à tartiner'];
 
 type Props = {
-  initialQuery: string;
-  onBack: () => void;
+  firstSearch: string; // recherche tapée sur la page d'accueil
+  goHome: () => void;
 };
 
-export function SearchScreen({ initialQuery, onBack }: Props) {
-  // `text` = ce qui est tapé, `query` = ce qui a été validé et envoyé à l'API
-  const [text, setText] = useState(initialQuery);
-  const [query, setQuery] = useState(initialQuery);
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+export function SearchScreen({ firstSearch, goHome }: Props) {
+  // Recherche
+  const [text, setText] = useState(firstSearch); // ce qui est tapé dans la barre
+  const [searchedText, setSearchedText] = useState(''); // dernière recherche envoyée
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Filtres
   const [showFilters, setShowFilters] = useState(false);
+  const [nutriScore, setNutriScore] = useState<NutriScore | null>(null);
+  const [allergens, setAllergens] = useState<string[]>([]);
+
+  // Produit dont la fiche est ouverte
   const [selected, setSelected] = useState<Product | null>(null);
-  const { results, status, error, retry } = useProductSearch(query);
 
-  const filtered = applyFilters(results, filters);
-  const activeFilters = (filters.maxNutriScore ? 1 : 0) + filters.excludedAllergens.length;
+  // Si on arrive depuis l'accueil avec une recherche, on la lance tout de suite
+  useEffect(() => {
+    if (firstSearch !== '') search(firstSearch);
+  }, []);
 
-  const submit = (value = text) => {
+  async function search(value: string) {
     Keyboard.dismiss();
     setText(value);
-    setQuery(value.trim());
-  };
+    value = value.trim();
+    if (value.length < 2) return;
 
-  const openProduct = (product: Product) => {
-    Keyboard.dismiss();
-    setSelected(product);
-  };
+    setSearchedText(value);
+    setLoading(true);
+    setError('');
+    try {
+      const results = await searchProducts(value);
+      setProducts(results);
+    } catch (e) {
+      setError("Impossible de contacter Open Food Facts. Vérifiez votre connexion.");
+    }
+    setLoading(false);
+  }
 
-  const renderBody = () => {
-    if (query.length < MIN_QUERY_LENGTH) {
+  // Les produits qui passent les filtres
+  const filteredProducts = products.filter(
+    (p) => isValidNutriScore(p, nutriScore) && isAllergenFree(p, allergens),
+  );
+  const filterCount = (nutriScore ? 1 : 0) + allergens.length;
+
+  // Ce qu'on affiche sous la barre de recherche
+  function renderResults() {
+    if (searchedText === '') {
       return (
         <View>
-          <EmptyState
-            emoji="🥗"
-            title="Que cherchez-vous ?"
-            message="Tapez le nom d'un produit, une marque ou un code-barres, puis lancez la recherche."
-          />
+          <Message emoji="🥗" title="Que cherchez-vous ?" text="Tapez un produit, une marque ou un code-barres." />
           <View style={styles.suggestions}>
             {SUGGESTIONS.map((s) => (
-              <Pressable key={s} style={styles.suggestion} onPress={() => submit(s)} accessibilityRole="button">
+              <Pressable key={s} style={styles.suggestion} onPress={() => search(s)}>
                 <Text style={styles.suggestionText}>{s}</Text>
               </Pressable>
             ))}
@@ -61,139 +81,95 @@ export function SearchScreen({ initialQuery, onBack }: Props) {
         </View>
       );
     }
-    if (status === 'loading') {
-      return (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loaderText}>Recherche sur Open Food Facts…</Text>
-        </View>
-      );
+    if (loading) {
+      return <ActivityIndicator style={{ marginTop: 48 }} size="large" color={colors.primary} />;
     }
-    if (status === 'error') {
-      return (
-        <EmptyState
-          emoji="⚠️"
-          title="La recherche a échoué"
-          message={`${error ?? ''}\nVérifiez votre connexion ou réessayez dans quelques secondes.`}
-          actionLabel="Réessayer"
-          onAction={retry}
-        />
-      );
+    if (error !== '') {
+      return <Message emoji="⚠️" title="La recherche a échoué" text={error} buttonText="Réessayer" onPress={() => search(searchedText)} />;
     }
-    if (results.length === 0) {
-      return (
-        <EmptyState
-          emoji="🔍"
-          title={`Aucun résultat pour « ${query} »`}
-          message="Vérifiez l'orthographe ou essayez un terme plus général."
-        />
-      );
+    if (products.length === 0) {
+      return <Message emoji="🔍" title={`Aucun résultat pour « ${searchedText} »`} text="Essayez un terme plus général." />;
     }
-    if (filtered.length === 0) {
+    if (filteredProducts.length === 0) {
       return (
-        <EmptyState
+        <Message
           emoji="🧺"
           title="Aucun produit ne correspond aux filtres"
-          message={`${results.length} produits trouvés, mais aucun ne passe les filtres choisis.`}
-          actionLabel="Retirer les filtres"
-          onAction={() => setFilters(NO_FILTERS)}
+          buttonText="Retirer les filtres"
+          onPress={() => {
+            setNutriScore(null);
+            setAllergens([]);
+          }}
         />
       );
     }
     return (
       <FlatList
-        data={filtered}
+        data={filteredProducts}
         keyExtractor={(item) => item.code}
-        renderItem={({ item }) => <ProductCard product={item} onPress={openProduct} />}
-        ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-        contentContainerStyle={styles.list}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+        renderItem={({ item }) => <ProductCard product={item} onPress={() => setSelected(item)} />}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        contentContainerStyle={{ padding: 16 }}
         ListHeaderComponent={
           <Text style={styles.count}>
-            {filtered.length} produit{filtered.length > 1 ? 's' : ''}
-            {activeFilters > 0 ? ` sur ${results.length}` : ''}
+            {filteredProducts.length} produit(s){filterCount > 0 ? ` sur ${products.length}` : ''}
           </Text>
         }
       />
     );
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View style={styles.inner}>
+        <View style={styles.center}>
           <View style={styles.topRow}>
-            <Pressable onPress={onBack} hitSlop={10} accessibilityRole="button" accessibilityLabel="Retour à l'accueil">
-              <View style={styles.logoRow}>
-                <Text style={styles.back}>‹</Text>
-                <Logo size={26} />
-              </View>
+            <Pressable onPress={goHome} style={styles.backRow}>
+              <Text style={styles.back}>‹</Text>
+              <Logo size={26} />
             </Pressable>
             <Pressable
-              onPress={() => setShowFilters((v) => !v)}
-              style={[styles.filterButton, (showFilters || activeFilters > 0) && styles.filterButtonActive]}
-              accessibilityRole="button"
+              onPress={() => setShowFilters(!showFilters)}
+              style={[styles.filterButton, filterCount > 0 && styles.filterButtonOn]}
             >
-              <Text style={[styles.filterButtonText, (showFilters || activeFilters > 0) && styles.filterButtonTextActive]}>
-                Filtres{activeFilters > 0 ? ` (${activeFilters})` : ''}
+              <Text style={[styles.filterText, filterCount > 0 && { color: colors.primary }]}>
+                Filtres{filterCount > 0 ? ` (${filterCount})` : ''}
               </Text>
             </Pressable>
           </View>
-          <SearchBar value={text} onChangeText={setText} onSubmit={() => submit()} autoFocus={!initialQuery} />
-          {showFilters && <FilterPanel filters={filters} onChange={setFilters} />}
+
+          <SearchBar value={text} onChange={setText} onSearch={() => search(text)} />
+
+          {showFilters && (
+            <FilterPanel
+              nutriScore={nutriScore}
+              setNutriScore={setNutriScore}
+              allergens={allergens}
+              setAllergens={setAllergens}
+            />
+          )}
         </View>
       </View>
 
-      <View style={[styles.body, styles.inner]}>{renderBody()}</View>
+      <View style={[styles.center, { flex: 1 }]}>{renderResults()}</View>
 
-      <ProductDetailModal product={selected} onClose={() => setSelected(null)} />
+      <ProductDetail product={selected} onClose={() => setSelected(null)} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  inner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
-  header: {
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  center: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
+  header: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border, padding: 16 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   back: { color: colors.textMuted, fontSize: 28, lineHeight: 28, marginTop: -4 },
-  filterButton: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-  filterButtonActive: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
-  filterButtonText: { fontWeight: '600', color: colors.text },
-  filterButtonTextActive: { color: colors.primary },
-  body: { flex: 1 },
-  loader: { marginTop: 48, alignItems: 'center', gap: spacing.md },
-  loaderText: { color: colors.textMuted },
-  list: { padding: spacing.lg, paddingBottom: spacing.xl },
-  count: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: spacing.sm },
-  suggestions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.lg,
-  },
-  suggestion: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
+  filterButton: { borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  filterButtonOn: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
+  filterText: { fontWeight: '600', color: colors.text },
+  count: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 8 },
+  suggestions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16, paddingHorizontal: 16 },
+  suggestion: { backgroundColor: colors.primaryLight, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   suggestionText: { color: colors.primary, fontWeight: '600' },
 });
