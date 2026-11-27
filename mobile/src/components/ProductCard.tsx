@@ -1,10 +1,9 @@
-// Carte d'un produit dans la liste des résultats.
+// Carte d'un produit dans la liste des résultats (comme .product-item dans le projet web).
 
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, shadow } from '../style/theme';
+import { isColorant } from '../controller/ProductController';
 import { Product } from '../model/Product';
-import { formatValue, levelColors, nutrientLevel } from '../style/format';
-import { NovaBadge, NutriScoreBadge } from './Badges';
+import { colors, nutriScoreColors } from '../style/theme';
 
 type Props = {
   product: Product;
@@ -12,84 +11,65 @@ type Props = {
 };
 
 export function ProductCard({ product, onPress }: Props) {
-  const colorants = product.additives.filter((a) => a.isColorant).length;
-
-  let additivesText = '✓ Sans additif';
-  if (product.additives.length > 0) {
-    additivesText = `${product.additives.length} additif(s)`;
-  }
+  const colorants = product.additives.filter(isColorant).length;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
-      <ProductImage product={product} size={64} />
+    <Pressable style={styles.card} onPress={onPress}>
+      {product.image ? (
+        <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+      ) : (
+        <View style={styles.image} />
+      )}
 
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={2}>
-          {product.name}
+        <Text style={styles.name}>{product.name}</Text>
+        <Text style={styles.grey}>
+          {product.brand} {product.quantity}
         </Text>
-        <Text style={styles.brand}>{brandAndQuantity(product)}</Text>
 
         <View style={styles.row}>
-          <NutriScoreBadge score={product.nutriScore} />
-          <NovaBadge nova={product.nova} />
+          <NutriScore score={product.nutriScore} />
+          <Text style={styles.grey}>NOVA {product.nova ?? '?'}</Text>
         </View>
 
-        <View style={styles.row}>
-          <Nutrient label="Sucres" name="sugars" value={product.nutrients.sugars} />
-          <Nutrient label="Gras" name="fat" value={product.nutrients.fat} />
-        </View>
-
-        <Text style={styles.small}>
-          {additivesText}
-          {colorants > 0 && <Text style={styles.colorants}> · {colorants} colorant(s)</Text>}
+        <Text style={styles.grey}>
+          Sucres : {show(product.sugars)} · Gras : {show(product.fat)}
+        </Text>
+        <Text style={styles.grey}>
+          {product.additives.length} additif(s)
+          {colorants > 0 && <Text style={styles.red}> dont {colorants} colorant(s)</Text>}
         </Text>
       </View>
     </Pressable>
   );
 }
 
-// Un point de couleur (vert / orange / rouge) + la valeur
-function Nutrient({ label, name, value }: { label: string; name: string; value: number | null }) {
-  const level = nutrientLevel(name, value);
-  const color = level ? levelColors[level] : colors.textMuted;
-  return (
-    <View style={styles.nutrient}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={styles.nutrientText}>
-        {label} {formatValue(value)}
-      </Text>
-    </View>
-  );
-}
-
-// Image du produit, ou la première lettre de la marque s'il n'y a pas d'image
-export function ProductImage({ product, size }: { product: Product; size: number }) {
-  if (product.imageUrl) {
-    return <Image source={{ uri: product.imageUrl }} style={{ width: size, height: size }} resizeMode="contain" />;
+// Carré de couleur avec la lettre du Nutri-Score (comme la div .nutriscore du projet web)
+export function NutriScore({ score }: { score: string | null }) {
+  if (score === null) {
+    return <Text style={styles.grey}>Nutri-Score ?</Text>;
   }
   return (
-    <View style={[styles.noImage, { width: size, height: size }]}>
-      <Text style={[styles.initial, { fontSize: size * 0.4 }]}>{product.brand.charAt(0).toUpperCase() || '?'}</Text>
+    <View style={[styles.score, { backgroundColor: nutriScoreColors[score] }]}>
+      <Text style={styles.scoreText}>{score.toUpperCase()}</Text>
     </View>
   );
 }
 
-// "Danone · 125 g" (sans le point si une des deux infos manque)
-export function brandAndQuantity(product: Product): string {
-  return [product.brand, product.quantity].filter((text) => text !== '').join(' · ');
+// 12.5 -> "12.5 g" et null -> "?"
+export function show(value: number | null, unit = 'g'): string {
+  if (value === null) return '?';
+  return Math.round(value * 10) / 10 + ' ' + unit;
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', backgroundColor: colors.white, borderRadius: 12, padding: 12, gap: 12, ...shadow },
+  card: { flexDirection: 'row', gap: 12, backgroundColor: colors.white, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: colors.border },
+  image: { width: 64, height: 64, borderRadius: 8, backgroundColor: colors.lightGreen },
   info: { flex: 1, gap: 4 },
-  name: { fontSize: 15, fontWeight: '700', color: colors.text },
-  brand: { fontSize: 13, color: colors.textMuted },
-  row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 2 },
-  nutrient: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  nutrientText: { fontSize: 12, color: colors.text },
-  small: { fontSize: 12, color: colors.textMuted },
-  colorants: { color: colors.red, fontWeight: '600' },
-  noImage: { borderRadius: 10, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
-  initial: { color: colors.primary, fontWeight: '800' },
+  name: { fontSize: 15, fontWeight: 'bold', color: colors.text },
+  grey: { fontSize: 13, color: colors.grey },
+  red: { color: colors.red, fontWeight: 'bold' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  score: { width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
+  scoreText: { color: colors.white, fontWeight: 'bold', fontSize: 16 },
 });

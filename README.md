@@ -48,8 +48,8 @@ npm run typecheck  # vérification TypeScript
 │       ├── model/          # Product.ts : le modèle produit
 │       ├── controller/     # ProductController.ts : appel à l'API + filtres
 │       ├── screens/        # Les pages (accueil, recherche)
-│       ├── components/     # Morceaux d'interface réutilisables
-│       └── style/          # Couleurs et formatage
+│       ├── components/     # Barre de recherche, carte produit, fiche produit
+│       └── style/          # Couleurs
 ├── docs/                   # Documentation du projet
 └── .github/                # CI, modèles d'issues et de pull requests
 ```

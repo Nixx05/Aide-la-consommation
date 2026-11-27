@@ -1,19 +1,15 @@
-// Page de recherche (équivalent de search.html) : barre de recherche, filtres, résultats et fiche produit.
+// Page de recherche (équivalent de search.html dans le projet web).
+// En haut : la barre de recherche et les filtres. En dessous : les produits trouvés.
 
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { isAllergenFree, isValidNutriScore, searchProducts } from '../controller/ProductController';
-import { FilterPanel } from '../components/FilterPanel';
-import { Logo } from '../components/Logo';
-import { Message } from '../components/Message';
 import { ProductCard } from '../components/ProductCard';
 import { ProductDetail } from '../components/ProductDetail';
 import { SearchBar } from '../components/SearchBar';
-import { colors, MAX_WIDTH } from '../style/theme';
-import { NutriScore, Product } from '../model/Product';
-
-const SUGGESTIONS = ['Yaourt nature', 'Céréales', 'Biscuits', 'Cola', 'Pâte à tartiner'];
+import { ALLERGENS, isAllergenFree, isValidNutriScore, searchProducts } from '../controller/ProductController';
+import { Product } from '../model/Product';
+import { colors, nutriScoreColors } from '../style/theme';
 
 type Props = {
   firstSearch: string; // recherche tapée sur la page d'accueil
@@ -21,155 +17,140 @@ type Props = {
 };
 
 export function SearchScreen({ firstSearch, goHome }: Props) {
-  // Recherche
   const [text, setText] = useState(firstSearch); // ce qui est tapé dans la barre
-  const [searchedText, setSearchedText] = useState(''); // dernière recherche envoyée
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]); // produits trouvés
+  const [message, setMessage] = useState('Entrez le nom d\'un produit.'); // message affiché à la place des produits
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Product | null>(null); // produit dont la fiche est ouverte
 
   // Filtres
   const [showFilters, setShowFilters] = useState(false);
-  const [nutriScore, setNutriScore] = useState<NutriScore | null>(null);
+  const [nutriScore, setNutriScore] = useState<string | null>(null);
   const [allergens, setAllergens] = useState<string[]>([]);
-
-  // Produit dont la fiche est ouverte
-  const [selected, setSelected] = useState<Product | null>(null);
 
   // Si on arrive depuis l'accueil avec une recherche, on la lance tout de suite
   useEffect(() => {
-    if (firstSearch !== '') search(firstSearch);
+    if (firstSearch !== '') search();
   }, []);
 
-  async function search(value: string) {
-    Keyboard.dismiss();
-    setText(value);
-    value = value.trim();
-    if (value.length < 2) return;
-
-    setSearchedText(value);
+  async function search() {
+    if (text.trim() === '') {
+      setMessage('Veuillez entrer un nom de produit.');
+      return;
+    }
     setLoading(true);
-    setError('');
     try {
-      const results = await searchProducts(value);
-      setProducts(results);
-    } catch (e) {
-      setError("Impossible de contacter Open Food Facts. Vérifiez votre connexion.");
+      const result = await searchProducts(text);
+      setProducts(result);
+      setMessage(result.length === 0 ? 'Aucun produit trouvé.' : '');
+    } catch {
+      setProducts([]);
+      setMessage("Erreur lors de l'appel à l'API. Vérifiez votre connexion et réessayez.");
     }
     setLoading(false);
   }
 
-  // Les produits qui passent les filtres
-  const filteredProducts = products.filter(
-    (p) => isValidNutriScore(p, nutriScore) && isAllergenFree(p, allergens),
-  );
-  const filterCount = (nutriScore ? 1 : 0) + allergens.length;
-
-  // Ce qu'on affiche sous la barre de recherche
-  function renderResults() {
-    if (searchedText === '') {
-      return (
-        <View>
-          <Message emoji="🥗" title="Que cherchez-vous ?" text="Tapez un produit, une marque ou un code-barres." />
-          <View style={styles.suggestions}>
-            {SUGGESTIONS.map((s) => (
-              <Pressable key={s} style={styles.suggestion} onPress={() => search(s)}>
-                <Text style={styles.suggestionText}>{s}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      );
+  // Coche ou décoche un allergène
+  function toggleAllergen(allergen: string) {
+    if (allergens.includes(allergen)) {
+      setAllergens(allergens.filter((a) => a !== allergen));
+    } else {
+      setAllergens([...allergens, allergen]);
     }
-    if (loading) {
-      return <ActivityIndicator style={{ marginTop: 48 }} size="large" color={colors.primary} />;
-    }
-    if (error !== '') {
-      return <Message emoji="⚠️" title="La recherche a échoué" text={error} buttonText="Réessayer" onPress={() => search(searchedText)} />;
-    }
-    if (products.length === 0) {
-      return <Message emoji="🔍" title={`Aucun résultat pour « ${searchedText} »`} text="Essayez un terme plus général." />;
-    }
-    if (filteredProducts.length === 0) {
-      return (
-        <Message
-          emoji="🧺"
-          title="Aucun produit ne correspond aux filtres"
-          buttonText="Retirer les filtres"
-          onPress={() => {
-            setNutriScore(null);
-            setAllergens([]);
-          }}
-        />
-      );
-    }
-    return (
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item) => item.code}
-        renderItem={({ item }) => <ProductCard product={item} onPress={() => setSelected(item)} />}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-        contentContainerStyle={{ padding: 16 }}
-        ListHeaderComponent={
-          <Text style={styles.count}>
-            {filteredProducts.length} produit(s){filterCount > 0 ? ` sur ${products.length}` : ''}
-          </Text>
-        }
-      />
-    );
   }
 
+  // On applique les filtres sur les produits trouvés
+  const filteredProducts = products.filter(
+    (product) => isValidNutriScore(product, nutriScore) && isAllergenFree(product, allergens),
+  );
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.center}>
-          <View style={styles.topRow}>
-            <Pressable onPress={goHome} style={styles.backRow}>
-              <Text style={styles.back}>‹</Text>
-              <Logo size={26} />
-            </Pressable>
-            <Pressable
-              onPress={() => setShowFilters(!showFilters)}
-              style={[styles.filterButton, filterCount > 0 && styles.filterButtonOn]}
-            >
-              <Text style={[styles.filterText, filterCount > 0 && { color: colors.primary }]}>
-                Filtres{filterCount > 0 ? ` (${filterCount})` : ''}
-              </Text>
-            </Pressable>
-          </View>
-
-          <SearchBar value={text} onChange={setText} onSearch={() => search(text)} />
-
-          {showFilters && (
-            <FilterPanel
-              nutriScore={nutriScore}
-              setNutriScore={setNutriScore}
-              allergens={allergens}
-              setAllergens={setAllergens}
-            />
-          )}
+    <SafeAreaView style={styles.page}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* En-tête */}
+        <View style={styles.header}>
+          <Pressable onPress={goHome}>
+            <Text style={styles.logo}>‹ NutriChoix</Text>
+          </Pressable>
+          <Pressable onPress={() => setShowFilters(!showFilters)}>
+            <Text style={styles.link}>{showFilters ? 'Masquer les filtres' : 'Filtres'}</Text>
+          </Pressable>
         </View>
-      </View>
 
-      <View style={[styles.center, { flex: 1 }]}>{renderResults()}</View>
+        <SearchBar value={text} onChange={setText} onSearch={search} />
+
+        {/* Filtres */}
+        {showFilters && (
+          <View style={styles.filters}>
+            <Text style={styles.title}>NUTRI-SCORE MINIMUM</Text>
+            <View style={styles.row}>
+              <Choice label="Tous" active={nutriScore === null} onPress={() => setNutriScore(null)} />
+              {['a', 'b', 'c', 'd', 'e'].map((score) => (
+                <Choice
+                  key={score}
+                  label={score.toUpperCase()}
+                  color={nutriScoreColors[score]}
+                  active={nutriScore === score}
+                  onPress={() => setNutriScore(score)}
+                />
+              ))}
+            </View>
+
+            <Text style={styles.title}>SANS ALLERGÈNES</Text>
+            <View style={styles.row}>
+              {Object.values(ALLERGENS).map((allergen) => (
+                <Choice
+                  key={allergen}
+                  label={allergen}
+                  active={allergens.includes(allergen)}
+                  onPress={() => toggleAllergen(allergen)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Résultats */}
+        {loading && <ActivityIndicator size="large" color={colors.green} style={{ marginTop: 40 }} />}
+
+        {!loading && message !== '' && <Text style={styles.message}>{message}</Text>}
+
+        {!loading && products.length > 0 && (
+          <Text style={styles.grey}>
+            {filteredProducts.length} produit(s) sur {products.length}
+          </Text>
+        )}
+
+        {!loading &&
+          filteredProducts.map((product) => (
+            <ProductCard key={product.code} product={product} onPress={() => setSelected(product)} />
+          ))}
+      </ScrollView>
 
       <ProductDetail product={selected} onClose={() => setSelected(null)} />
     </SafeAreaView>
   );
 }
 
+// Un bouton de filtre, coloré quand il est sélectionné
+function Choice({ label, active, color = colors.green, onPress }: { label: string; active: boolean; color?: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.choice, active && { backgroundColor: color, borderColor: color }]}>
+      <Text style={{ color: active ? colors.white : colors.text }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center' },
-  header: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.border, padding: 16 },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  back: { color: colors.textMuted, fontSize: 28, lineHeight: 28, marginTop: -4 },
-  filterButton: { borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  filterButtonOn: { backgroundColor: colors.primaryLight, borderColor: colors.primaryLight },
-  filterText: { fontWeight: '600', color: colors.text },
-  count: { fontSize: 13, color: colors.textMuted, fontWeight: '600', marginBottom: 8 },
-  suggestions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16, paddingHorizontal: 16 },
-  suggestion: { backgroundColor: colors.primaryLight, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  suggestionText: { color: colors.primary, fontWeight: '600' },
+  page: { flex: 1, backgroundColor: colors.background },
+  content: { padding: 16, gap: 12, width: '100%', maxWidth: 760, alignSelf: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  logo: { fontSize: 24, fontWeight: 'bold', color: colors.green },
+  link: { fontSize: 15, fontWeight: 'bold', color: colors.green },
+  filters: { backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.green, padding: 12, gap: 8 },
+  title: { fontSize: 13, fontWeight: 'bold', color: colors.darkGreen },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  choice: { borderWidth: 1, borderColor: colors.border, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  message: { textAlign: 'center', color: colors.grey, fontSize: 15, marginTop: 40 },
+  grey: { color: colors.grey },
 });

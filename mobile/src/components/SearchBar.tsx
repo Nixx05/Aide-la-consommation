@@ -13,26 +13,15 @@ type Props = {
 export function SearchBar({ value, onChange, onSearch }: Props) {
   return (
     <View style={styles.row}>
-      <View style={styles.field}>
-        <Text style={styles.icon}>⌕</Text>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChange}
-          onSubmitEditing={onSearch} // touche Entrée
-          placeholder="Nutella, yaourt nature, 3017620422003…"
-          placeholderTextColor={colors.textMuted}
-          returnKeyType="search"
-          autoCorrect={false}
-        />
-        {value !== '' && (
-          <Pressable onPress={() => onChange('')} style={styles.clear}>
-            <Text style={styles.clearText}>✕</Text>
-          </Pressable>
-        )}
-      </View>
-
-      <Pressable onPress={onSearch} style={({ pressed }) => [styles.button, pressed && { backgroundColor: colors.primaryDark }]}>
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChange}
+        onSubmitEditing={onSearch} // touche Entrée
+        placeholder="Entrez le nom d'un produit"
+        placeholderTextColor={colors.grey}
+      />
+      <Pressable style={styles.button} onPress={onSearch}>
         <Text style={styles.buttonText}>Rechercher</Text>
       </Pressable>
     </View>
@@ -41,21 +30,17 @@ export function SearchBar({ value, onChange, onSearch }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
-  field: {
+  input: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    minWidth: 0,
+    height: 48,
     backgroundColor: colors.white,
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 48,
+    fontSize: 16,
   },
-  icon: { fontSize: 22, color: colors.textMuted, marginRight: 8 },
-  input: { flex: 1, fontSize: 16, color: colors.text, height: '100%', minWidth: 0 },
-  clear: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  clearText: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
-  button: { backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', height: 48 },
-  buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  button: { backgroundColor: colors.green, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  buttonText: { color: colors.white, fontWeight: 'bold' },
 });
