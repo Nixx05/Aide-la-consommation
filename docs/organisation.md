@@ -10,17 +10,16 @@ Proposition de répartition — à adapter et à compléter avec vos prénoms.
 | Comparaison | _à définir_ | `feature/comparaison` | Sélection de 2 à 4 produits, tableau comparatif |
 | API & données | _à définir_ | `feature/integration-api` | Back-end / Open Food Facts, remplacement du mock |
 
-## Branches déjà créées
+## Branches
 
 | Branche | Statut |
 | --- | --- |
 | `main` | v0.1.0 — recherche sur données fictives |
 | `develop` | Intégration |
-| `feature/recherche-produit` | Fusionnée dans `develop` (peut servir de base aux améliorations) |
-| `feature/fiche-produit` | À démarrer |
-| `feature/filtres` | À démarrer |
-| `feature/comparaison` | À démarrer |
-| `feature/integration-api` | À démarrer |
+| `feature/integration-api` | API Open Food Facts, page d'accueil, filtres, fiche produit — à fusionner dans `develop` par Pull Request |
+
+Pour une nouvelle fonctionnalité (ex : comparaison), créer la branche à partir de `develop` :
+`git switch develop`, `git pull`, puis `git switch -c feature/comparaison`.
 
 ## Jalons
 

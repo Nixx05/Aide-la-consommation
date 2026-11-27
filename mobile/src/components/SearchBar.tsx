@@ -1,64 +1,46 @@
+// Barre de recherche : champ de texte + bouton "Rechercher".
+// Utilisée sur la page d'accueil et sur la page de recherche.
+
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors } from '../style/theme';
 
 type Props = {
   value: string;
-  onChangeText: (text: string) => void;
+  onChange: (text: string) => void;
+  onSearch: () => void;
 };
 
-export function SearchBar({ value, onChangeText }: Props) {
+export function SearchBar({ value, onChange, onSearch }: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
-        ⌕
-      </Text>
+    <View style={styles.row}>
       <TextInput
         style={styles.input}
         value={value}
-        onChangeText={onChangeText}
-        placeholder="Rechercher un produit, une marque…"
-        placeholderTextColor={colors.textMuted}
-        returnKeyType="search"
-        autoCorrect={false}
-        autoCapitalize="none"
-        clearButtonMode="never"
-        accessibilityLabel="Rechercher un produit"
+        onChangeText={onChange}
+        onSubmitEditing={onSearch} // touche Entrée
+        placeholder="Entrez le nom d'un produit"
+        placeholderTextColor={colors.grey}
       />
-      {value.length > 0 && (
-        <Pressable
-          onPress={() => onChangeText('')}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Effacer la recherche"
-          style={styles.clear}
-        >
-          <Text style={styles.clearText}>✕</Text>
-        </Pressable>
-      )}
+      <Pressable style={styles.button} onPress={onSearch}>
+        <Text style={styles.buttonText}>Rechercher</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+  row: { flexDirection: 'row', gap: 8 },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    height: 48,
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    height: 48,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
-  icon: { fontSize: 22, color: colors.textMuted, marginRight: spacing.sm },
-  input: { flex: 1, fontSize: 16, color: colors.text, height: '100%' },
-  clear: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clearText: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
+  button: { backgroundColor: colors.green, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center' },
+  buttonText: { color: colors.white, fontWeight: 'bold' },
 });
